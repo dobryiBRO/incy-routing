@@ -19,7 +19,8 @@ Keep the existing VPN subscription and selected server. Add this URL as an **Aut
 - Default: existing VPN.
 - Direct: `category-ru`, `ru-available-only-inside`, private domains/IPs.
 - Explicit proxy categories: YouTube, Google, Meta, OpenAI.
-- No broad `geoip:ru` bypass; no ad or tracker blocking.
+- GeoSite-only service classification. Local networks use explicit IPv4/IPv6 CIDRs; no `geoip:` rules or custom GeoIP download (`Geoipurl` is empty). An INCY version may still manage its own built-in geodata independently.
+- No broad country-IP bypass; no ad or tracker blocking.
 - Direct DNS: Yandex 77.88.8.8 (UDP); proxied DNS: Cloudflare DoH.
 
 `category-ru` includes the entire `.ru` zone. Direct requests use the access network, exposing destination/DNS metadata to that network while preserving normal site HTTPS. Client-generated precedence and application behavior must be checked on the actual INCY version.

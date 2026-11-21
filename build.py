@@ -12,7 +12,7 @@ import time
 import urllib.request
 
 SITE_TAGS = ['category-ru', 'ru-available-only-inside', 'private', 'youtube', 'google', 'meta', 'openai']
-IP_TAGS = ['private']
+DATA_TAGS = {'geosite.dat': SITE_TAGS}
 
 
 def varint(value):
@@ -84,7 +84,7 @@ def publish(output, base, files, checksums, now):
     if not base.startswith('https://'):
         raise ValueError('HTTPS publication URL required')
     selected = {}
-    for name, tags in [('geosite.dat', SITE_TAGS), ('geoip.dat', IP_TAGS)]:
+    for name, tags in DATA_TAGS.items():
         digest = hashlib.sha256(files[name]).hexdigest()
         advertised = checksums[name].split()[0]
         if not re.fullmatch('[0-9a-fA-F]{64}', advertised) or digest != advertised.lower():
@@ -103,9 +103,11 @@ def publish(output, base, files, checksums, now):
         'DomesticDNSIP': '77.88.8.8',
         'DnsHosts': {'cloudflare-dns.com': '1.1.1.1'},
         'Geositeurl': base.rstrip('/') + '/' + paths['geosite.dat'],
-        'Geoipurl': base.rstrip('/') + '/' + paths['geoip.dat'],
+        'Geoipurl': '',
         'DirectSites': ['geosite:category-ru', 'geosite:ru-available-only-inside', 'geosite:private'],
-        'DirectIp': ['geoip:private'],
+        'DirectIp': ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16',
+                     '127.0.0.0/8', '169.254.0.0/16', '::1/128',
+                     'fc00::/7', 'fe80::/10'],
         'ProxySites': ['geosite:youtube', 'geosite:google', 'geosite:meta', 'geosite:openai'],
         'ProxyIp': [],
         'BlockSites': [],
@@ -147,7 +149,7 @@ def main():
     if not re.fullmatch('[0-9a-f]{40}', commit):
         raise ValueError('Invalid upstream revision')
     root = f'https://raw.githubusercontent.com/runetfreedom/russia-v2ray-rules-dat/{commit}/'
-    names = ['geosite.dat', 'geoip.dat']
+    names = list(DATA_TAGS)
     requested = names + [n + '.sha256sum' for n in names]
     with concurrent.futures.ThreadPoolExecutor(max_workers=4) as pool:
         blobs = dict(zip(requested, pool.map(lambda n: download(root + n), requested)))
@@ -158,7 +160,7 @@ def main():
                       'last_updated': profile['LastUpdated'],
                       'input_bytes': {n: len(files[n]) for n in names},
                       'output_bytes': {n: (args.out / profile[k].removeprefix(args.base.rstrip('/')+'/')).stat().st_size
-                                       for n,k in [('geosite.dat','Geositeurl'),('geoip.dat','Geoipurl')]},
+                                       for n,k in [('geosite.dat','Geositeurl')]},
                       'categories': SITE_TAGS, 'checksum_verified': True}, ensure_ascii=False, indent=2))
 
 

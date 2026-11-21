@@ -11,14 +11,21 @@
     "cloudflare-dns.com": "1.1.1.1"
   },
   "Geositeurl": "https://raw.githubusercontent.com/dobryiBRO/incy-routing/main/public/data/ef25481107f97ca8752239ecc65fbba6eeb92b361a4546dcd615deb3c069b21b/geosite.dat",
-  "Geoipurl": "https://raw.githubusercontent.com/dobryiBRO/incy-routing/main/public/data/4acc277c0425871bf1171a06302a60fec1d7ced5db204bb5b4090a5b6e0efe99/geoip.dat",
+  "Geoipurl": "",
   "DirectSites": [
     "geosite:category-ru",
     "geosite:ru-available-only-inside",
     "geosite:private"
   ],
   "DirectIp": [
-    "geoip:private"
+    "10.0.0.0/8",
+    "172.16.0.0/12",
+    "192.168.0.0/16",
+    "127.0.0.0/8",
+    "169.254.0.0/16",
+    "::1/128",
+    "fc00::/7",
+    "fe80::/10"
   ],
   "ProxySites": [
     "geosite:youtube",
@@ -32,5 +39,5 @@
   "DomainStrategy": "IPIfNonMatch",
   "FakeDNS": "false",
   "useChunkFiles": false,
-  "LastUpdated": "1795295946"
+  "LastUpdated": "1795296540"
 }
