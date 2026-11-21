@@ -1,0 +1,36 @@
+{
+  "Name": "Aleksey RU Direct Pilot",
+  "GlobalProxy": "true",
+  "RemoteDNSType": "DoH",
+  "RemoteDNSDomain": "https://cloudflare-dns.com/dns-query",
+  "RemoteDNSIP": "1.1.1.1",
+  "DomesticDNSType": "DoU",
+  "DomesticDNSDomain": "",
+  "DomesticDNSIP": "77.88.8.8",
+  "DnsHosts": {
+    "cloudflare-dns.com": "1.1.1.1"
+  },
+  "Geositeurl": "https://raw.githubusercontent.com/dobryiBRO/incy-routing/main/public/data/ef25481107f97ca8752239ecc65fbba6eeb92b361a4546dcd615deb3c069b21b/geosite.dat",
+  "Geoipurl": "https://raw.githubusercontent.com/dobryiBRO/incy-routing/main/public/data/4acc277c0425871bf1171a06302a60fec1d7ced5db204bb5b4090a5b6e0efe99/geoip.dat",
+  "DirectSites": [
+    "geosite:category-ru",
+    "geosite:ru-available-only-inside",
+    "geosite:private"
+  ],
+  "DirectIp": [
+    "geoip:private"
+  ],
+  "ProxySites": [
+    "geosite:youtube",
+    "geosite:google",
+    "geosite:meta",
+    "geosite:openai"
+  ],
+  "ProxyIp": [],
+  "BlockSites": [],
+  "BlockIp": [],
+  "DomainStrategy": "IPIfNonMatch",
+  "FakeDNS": "false",
+  "useChunkFiles": false,
+  "LastUpdated": "1795295946"
+}
