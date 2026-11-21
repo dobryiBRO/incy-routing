@@ -1,4 +1,4 @@
-"""Publish small INCY geodata subsets from checksum-verified Runet Freedom data.
+"""Publish inline INCY domain rules from checksum-verified Runet Freedom data.
 
 No third-party packages, VPN credentials, client changes or server access.
 """
@@ -51,7 +51,8 @@ def fields(data):
             yield number, wire, data[pos:end]
             pos = end
         elif wire == 0:
-            _, pos = read_varint(data, pos)
+            value, pos = read_varint(data, pos)
+            yield number, wire, value
         elif wire in (1, 5):
             pos += 8 if wire == 1 else 4
             if pos > len(data):
@@ -80,6 +81,23 @@ def subset(data, tags):
     return b''.join(b'\x0a' + varint(len(source[t])) + source[t] for t in sorted(tags))
 
 
+def expand_rules(source, tags):
+    prefixes = {0: 'keyword:', 1: 'regexp:', 2: 'domain:', 3: 'full:'}
+    result = set()
+    for tag in tags:
+        for number, wire, domain in fields(source[tag]):
+            if number != 2 or wire != 2:
+                continue
+            parts = list(fields(domain))
+            kinds = [v for n, w, v in parts if n == 1 and w == 0]
+            values = [v.decode('utf-8') for n, w, v in parts if n == 2 and w == 2]
+            kind = kinds[-1] if kinds else 0
+            if kind not in prefixes or len(values) != 1 or not values[0]:
+                raise ValueError('Invalid domain record in category: ' + tag)
+            result.add(prefixes[kind] + values[0])
+    return sorted(result)
+
+
 def publish(output, base, files, checksums, now):
     if not base.startswith('https://'):
         raise ValueError('HTTPS publication URL required')
@@ -90,8 +108,10 @@ def publish(output, base, files, checksums, now):
         if not re.fullmatch('[0-9a-fA-F]{64}', advertised) or digest != advertised.lower():
             raise ValueError('Upstream checksum mismatch: ' + name)
         selected[name] = subset(files[name], tags)
-    # Validate all inputs before modifying any last-known-good output.
-    paths = {name: f'data/{hashlib.sha256(blob).hexdigest()}/{name}' for name, blob in selected.items()}
+    # Resolve categories at publication time: the client needs no DAT lookups.
+    source = entries(selected['geosite.dat'])
+    direct = expand_rules(source, ['category-ru', 'ru-available-only-inside', 'private'])
+    proxy = expand_rules(source, ['youtube', 'google', 'meta', 'openai'])
     profile = {
         'Name': 'Aleksey RU Direct Pilot',
         'GlobalProxy': 'true',
@@ -102,13 +122,13 @@ def publish(output, base, files, checksums, now):
         'DomesticDNSDomain': '',
         'DomesticDNSIP': '77.88.8.8',
         'DnsHosts': {'cloudflare-dns.com': '1.1.1.1'},
-        'Geositeurl': base.rstrip('/') + '/' + paths['geosite.dat'],
+        'Geositeurl': '',
         'Geoipurl': '',
-        'DirectSites': ['geosite:category-ru', 'geosite:ru-available-only-inside', 'geosite:private'],
+        'DirectSites': direct,
         'DirectIp': ['10.0.0.0/8', '172.16.0.0/12', '192.168.0.0/16',
                      '127.0.0.0/8', '169.254.0.0/16', '::1/128',
                      'fc00::/7', 'fe80::/10'],
-        'ProxySites': ['geosite:youtube', 'geosite:google', 'geosite:meta', 'geosite:openai'],
+        'ProxySites': proxy,
         'ProxyIp': [],
         'BlockSites': [],
         'BlockIp': [],
@@ -122,11 +142,6 @@ def publish(output, base, files, checksums, now):
     if old_policy == profile:
         return old
     profile['LastUpdated'] = str(max(int(now), int(old.get('LastUpdated', '0')) + 1))
-    for name, blob in selected.items():
-        target = output / paths[name]
-        target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_bytes(blob)
-        target.with_name(target.name + '.sha256').write_text(hashlib.sha256(blob).hexdigest() + '\n')
     output.mkdir(parents=True, exist_ok=True)
     temporary = output / '.profile.json.new'
     temporary.write_text(json.dumps(profile, ensure_ascii=False, indent=2) + '\n')
@@ -159,8 +174,8 @@ def main():
     print(json.dumps({'upstream_commit': commit, 'profile': str(args.out/'profile.json'),
                       'last_updated': profile['LastUpdated'],
                       'input_bytes': {n: len(files[n]) for n in names},
-                      'output_bytes': {n: (args.out / profile[k].removeprefix(args.base.rstrip('/')+'/')).stat().st_size
-                                       for n,k in [('geosite.dat','Geositeurl')]},
+                      'output_bytes': {'profile.json': (args.out/'profile.json').stat().st_size},
+                      'rule_counts': {'direct': len(profile['DirectSites']), 'proxy': len(profile['ProxySites'])},
                       'categories': SITE_TAGS, 'checksum_verified': True}, ensure_ascii=False, indent=2))
 
 
