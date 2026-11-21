@@ -1,0 +1,47 @@
+name: Update INCY routing
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 3,15 * * *'
+  push:
+    branches: [main]
+    paths:
+      - build.py
+      - test_build.py
+      - .github/workflows/update.yml
+
+permissions:
+  contents: write
+
+concurrency:
+  group: incy-routing-publication
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: main
+          persist-credentials: true
+      - name: Test publisher
+        run: python3 test_build.py
+      - name: Build verified geodata and routing profile
+        run: python3 build.py --base "https://raw.githubusercontent.com/$GITHUB_REPOSITORY/main/public" --out public
+      - name: Publish changed files
+        shell: bash
+        run: |
+          set -euo pipefail
+          git add public
+          if git diff --cached --quiet; then
+            printf 'Selected rules have not changed.\n'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'Update verified INCY routing data'
+          git push origin HEAD:main
