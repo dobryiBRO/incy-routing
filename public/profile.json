@@ -2076,6 +2076,7 @@
     "domain:gateway.dev",
     "domain:gbiz",
     "domain:gcr.io",
+    "domain:gemma.ai",
     "domain:gerritcodereview.com",
     "domain:get.app",
     "domain:get.dev",
@@ -3155,5 +3156,5 @@
   "DomainStrategy": "IPIfNonMatch",
   "FakeDNS": "false",
   "useChunkFiles": false,
-  "LastUpdated": "1795297398"
+  "LastUpdated": "1795528676"
 }
